@@ -1,0 +1,2 @@
+This repo includes a Next.js full stack web app and a Plasmo Chrome Extension. The purpose of the project is to autofill common job applications made with Greenhouse, AshbyHQ, etc.  
+The Next.js app allows the user to upload their profile information 
