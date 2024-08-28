@@ -56,7 +56,7 @@ const CoverLetterGen = () => {
         ></textarea>
         <label className='text-white'>Resume</label>
         <input
-          onChange={handleFileChange}
+          onChange={handleFileChange} 
           type="file"
           className={classN + "text-white flex-grow-0"}
         ></input>
