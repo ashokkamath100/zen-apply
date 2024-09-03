@@ -3,6 +3,8 @@ import { useState } from "react"
 
 import { sendToBackground } from "@plasmohq/messaging"
 
+import handleLinkedInEasyApply from "~easyapply"
+
 export const getStyle = () => {
   const style = document.createElement("style")
   style.textContent = cssText
@@ -59,72 +61,127 @@ const handleMainFields = async (fields, userData) => {
   }
 }
 
-const handleSelect = async (field) => {
-    const select = field.getElementsByTagName('select')
-    console.log('handleSelect called')
-    if(select){
-        console.log('select: ', select) 
-        select[0].value = '1' 
-    }
+const handleSelect = async (field, selectValue) => {
+  const select = field.getElementsByTagName("select")
+  console.log("handleSelect called for field: ", field)
+  if (select) {
+    console.log("field, select", field, select)
+    select[0].value = selectValue
+    select[0].dispatchEvent(new Event("change"))
+  }
 }
 
 const handleCustomFields = async (fields, userData) => {
-    console.log('handling custom fields') 
-    console.log('fields: ', fields) ; 
-    let disability = document.getElementById('job_application_disability_status')
-    if(disability){
-        console.log('found disability')
-        disability.value = '0'
-    }
-    for (let i = 0; i < fields.length; i++) {
-        const label = fields[i].getElementsByTagName("label") 
-        console.log(label[0].textContent) 
+  console.log("handling custom fields")
+  console.log("fields: ", fields)
+  let disability = document.getElementById("job_application_disability_status")
+  if (disability) {
+    console.log("found disability")
+    disability.value = "0"
+  }
+  for (let i = 0; i < fields.length; i++) {
+    const label = fields[i].getElementsByTagName("label")
+    console.log(label[0].textContent)
 
-        if(label[0].textContent.includes("Are you legally authorized to work in the United States?")){
-            console.log('legally authorized')
-            await handleSelect(label[0])
-        }
-        if(label[0].textContent.includes("Do you require sponsorship for employment visa status?")){
-            console.log('sponsorship')
-            await handleSelect(label[0])
-        }
+    if (
+      label[0].textContent.includes(
+        "Are you legally authorized to work in the United States?"
+      )
+    ) {
+      console.log("legally authorized")
+      await handleSelect(label[0], "1")
+    }
+    if (
+      label[0].textContent.includes(
+        "Do you require sponsorship for employment visa status?"
+      )
+    ) {
+      console.log("sponsorship")
+      await handleSelect(label[0], "0")
     }
   }
+}
+
+const handleEEOCSelect = async (field, selectElement, selectValue) => {
+  console.log("handleSelect called for field: ", field)
+  if (selectElement) {
+    console.log("field, select", field, selectElement)
+    selectElement.value = selectValue
+    selectElement.dispatchEvent(new Event("change"))
+  }
+}
+
+const handleEEOCFields = async (fields, userData) => {
+  console.log("handling eeoc fields")
+  console.log("fields: ", fields)
+
+  for (let i = 0; i < fields.length; i++) {
+    const label = fields[i].getElementsByTagName("label")
+    const selectElement = fields[i].getElementsByTagName("select")[0]
+    console.log(label[0].textContent)
+
+    if (label[0].textContent.includes("Disability Status")) {
+      console.log("disability status")
+      await handleEEOCSelect(label[0], selectElement, "2")
+    }
+    if (label[0].textContent.includes("Are you Hispanic/Latino?")) {
+      console.log("hispanic/latino")
+      await handleEEOCSelect(label[0], selectElement, "No")
+    }
+    if (label[0].textContent.includes("Veteran Status")) {
+      console.log("veteran status")
+      await handleEEOCSelect(label[0], selectElement, "1")
+    }
+    if (label[0].textContent.includes("Gender")) {
+      console.log("gender")
+      await handleEEOCSelect(label[0], selectElement, "1")
+    }
+  }
+}
 
 const handleAutoFill = async () => {
   const currentUrl = window.location.href
 
   // Get the domain name
   const domain = window.location.hostname
+  if (domain === "www.linkedin.com") {
+    handleLinkedInEasyApply()
+  } else {
+    // Get the path of the URL
+    const path = window.location.pathname
 
-  // Get the path of the URL
-  const path = window.location.pathname
+    console.log(`Current URL: ${currentUrl}`)
+    console.log(`Domain: ${domain}`)
+    console.log(`Path: ${path}`)
+    const jobContent = document.getElementById("content")
+    if (jobContent) {
+      parseJobContent(jobContent)
+      await handleEducationSection()
+    }
 
-  console.log(`Current URL: ${currentUrl}`)
-  console.log(`Domain: ${domain}`)
-  console.log(`Path: ${path}`)
-  const jobContent = document.getElementById("content")
-  if (jobContent) {
-    parseJobContent(jobContent)
-    await handleEducationSection()
+    const userData = await callAPI()
+    console.log("userData in handleAutofill: ", typeof userData)
+
+    const mainFieldsDiv = document.getElementById("main_fields")
+    const mainFields = mainFieldsDiv.getElementsByClassName("field")
+    const education_section = mainFieldsDiv.getElementsByClassName("education")
+    if (education_section) {
+      console.log("found education section")
+    }
+    handleMainFields(mainFields, userData)
+
+    const customFieldsDiv = document.getElementById("custom_fields")
+    const customFields = customFieldsDiv.getElementsByClassName("field")
+    handleCustomFields(customFields, userData)
+
+    const eeocFieldsDiv = document.getElementById("eeoc_fields")
+    const eeocFields = eeocFieldsDiv.getElementsByClassName("field")
+    handleEEOCFields(eeocFields, userData)
+
+    const demoFieldsDiv = document.getElementById("demographic_questions")
+    const demoFields = demoFieldsDiv.getElementsByClassName("field")
+    handleEEOCFields(demoFields, userData)
   }
-
-  const userData = await callAPI()
-  console.log("userData in handleAutofill: ", typeof userData)
-
-  const mainFieldsDiv = document.getElementById("main_fields")
-  const mainFields = mainFieldsDiv.getElementsByClassName("field")
-  const education_section = mainFieldsDiv.getElementsByClassName("education")
-  if (education_section) {
-    console.log("found education section")
-  }
-  handleMainFields(mainFields,userData) ; 
-
-  const customFieldsDiv = document.getElementById("custom_fields") 
-  const customFields = customFieldsDiv.getElementsByClassName("field")
-  handleCustomFields(customFields, userData)
-
-
 }
 const SidePanel = () => {
   const [visible, setVisible] = useState<boolean>(false)
